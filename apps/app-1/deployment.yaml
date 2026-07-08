@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: arminsabzehi/my-app:v5
+        image: arminsabzehi/my-app:v4
         ports:
         - containerPort: 80
