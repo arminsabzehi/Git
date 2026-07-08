@@ -3,7 +3,8 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-
+    paths:
+      - 'apps/app-1/**'
 jobs:
   bump-version:
     runs-on: ubuntu-latest
