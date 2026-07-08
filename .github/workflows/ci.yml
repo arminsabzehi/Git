@@ -5,7 +5,43 @@ on:
     branches: [ main ]
 
 jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.tag-version.outputs.new_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: tag-version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: tags } = await github.rest.repos.listTags({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            let maxVersion = 0;
+            for (const tag of tags) {
+              if (tag.name.startsWith('v')) {
+                const version = parseInt(tag.name.slice(1));
+                if (!isNaN(version) && version > maxVersion) {
+                  maxVersion = version;
+                }
+              }
+            }
+            const nextVersion = maxVersion + 1;
+            const newTag = `v${nextVersion}`;
+            core.setOutput('new_tag', newTag);
+            console.log(`New tag: ${newTag}`);
+
   build-and-push:
+    needs: bump-version
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -24,14 +60,22 @@ jobs:
         with:
           context: .
           push: true
-          tags: arminsabzehi/my-app:latest
+          tags: |
+            arminsabzehi/my-app:${{ needs.bump-version.outputs.new_tag }}
+            arminsabzehi/my-app:latest
 
-      - name: Update deployment.yaml
+      - name: Create and push Git tag
         run: |
-          # از تگ latest استفاده می‌کنیم (یا می‌توانید از commit SHA استفاده کنید)
-          sed -i "s|arminsabzehi/my-app:.*|arminsabzehi/my-app:latest|g" deployment.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.bump-version.outputs.new_tag }}
+          git push origin ${{ needs.bump-version.outputs.new_tag }}
+
+      - name: Update deployment.yaml with new tag
+        run: |
+          sed -i "s|arminsabzehi/my-app:.*|arminsabzehi/my-app:${{ needs.bump-version.outputs.new_tag }}|g" deployment.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add deployment.yaml
-          git commit -m "Update deployment.yaml to latest image [skip ci]" || echo "No changes to commit"
+          git commit -m "Update deployment.yaml to ${{ needs.bump-version.outputs.new_tag }} [skip ci]"
           git push
