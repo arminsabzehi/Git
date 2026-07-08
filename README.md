@@ -1,0 +1,1 @@
+# My ArgoCD Apps Repository
