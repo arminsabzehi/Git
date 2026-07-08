@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -10,9 +10,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Verify Dockerfile exists
-        run: ls -la && cat Dockerfile
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -26,3 +23,13 @@ jobs:
           context: .
           push: true
           tags: arminsabzehi/my-app:latest
+
+      - name: Update deployment.yaml
+        run: |
+          # از تگ latest استفاده می‌کنیم (یا می‌توانید از commit SHA استفاده کنید)
+          sed -i "s|arminsabzehi/my-app:.*|arminsabzehi/my-app:latest|g" deployment.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deployment.yaml
+          git commit -m "Update deployment.yaml to latest image [skip ci]" || echo "No changes to commit"
+          git push
