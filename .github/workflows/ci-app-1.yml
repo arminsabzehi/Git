@@ -61,8 +61,8 @@ jobs:
           context: .
           push: true
           tags: |
-            arminsabzehi/my-app:${{ needs.bump-version.outputs.new_tag }}
-            arminsabzehi/my-app:latest
+            arminsabzehi/app-1:${{ needs.bump-version.outputs.new_tag }}
+            arminsabzehi/app-1:latest
 
       - name: Create and push Git tag
         run: |
@@ -73,7 +73,7 @@ jobs:
 
       - name: Update deployment.yaml with new tag
         run: |
-          sed -i "s|arminsabzehi/my-app:.*|arminsabzehi/my-app:${{ needs.bump-version.outputs.new_tag }}|g" deployment.yaml
+          sed -i "s|arminsabzehi/app-1:.*|arminsabzehi/app-1:${{ needs.bump-version.outputs.new_tag }}|g" deployment.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add deployment.yaml
