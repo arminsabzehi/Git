@@ -1,3 +1,5 @@
+# Updated workflow to include Dockerfile
+
 name: CI Pipeline
 
 on:
