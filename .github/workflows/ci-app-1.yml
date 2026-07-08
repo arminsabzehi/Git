@@ -58,7 +58,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: apps/app-1
           push: true
           tags: |
             arminsabzehi/app-1:${{ needs.bump-version.outputs.new_tag }}
