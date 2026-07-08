@@ -73,7 +73,7 @@ jobs:
 
       - name: Update deployment.yaml with new tag
         run: |
-          sed -i "s|arminsabzehi/app-1:.*|arminsabzehi/app-1:${{ needs.bump-version.outputs.new_tag }}|g" deployment.yaml
+          sed -i "s|arminsabzehi/app-1:.*|arminsabzehi/app-1:${{ needs.bump-version.outputs.new_tag }}|g" apps/app-1/deployment.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add apps/app-1/deployment.yaml
