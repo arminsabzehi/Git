@@ -1,0 +1,81 @@
+name: CI/CD Pipeline for App-2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/app-2/**'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.tag-version.outputs.new_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: tag-version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: tags } = await github.rest.repos.listTags({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            let maxVersion = 0;
+            for (const tag of tags) {
+              if (tag.name.startsWith('app-2-v')) {
+                const version = parseInt(tag.name.slice(9));
+                if (!isNaN(version) && version > maxVersion) {
+                  maxVersion = version;
+                }
+              }
+            }
+            const nextVersion = maxVersion + 1;
+            const newTag = `app-2-v${nextVersion}`;
+            core.setOutput('new_tag', newTag);
+            console.log(`New tag: ${newTag}`);
+
+  build-and-push:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: arminsabzehi
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/app-2
+          push: true
+          tags: |
+            arminsabzehi/app-2:${{ needs.bump-version.outputs.new_tag }}
+            arminsabzehi/app-2:latest
+
+      - name: Create and push Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.bump-version.outputs.new_tag }}
+          git push origin ${{ needs.bump-version.outputs.new_tag }}
+
+      - name: Update deployment.yaml with new tag
+        run: |
+          sed -i "s|arminsabzehi/app-2:.*|arminsabzehi/app-2:${{ needs.bump-version.outputs.new_tag }}|g" apps/app-2/deployment.yaml
+          git add apps/app-2/deployment.yaml
+          git commit -m "Update app-2 deployment.yaml to ${{ needs.bump-version.outputs.new_tag }} [skip ci]"
+          git push
