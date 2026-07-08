@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/arminsabzehi/Git.git
     targetRevision: main
-    path: .
+    path: apps/app-1
   destination:
     server: https://kubernetes.default.svc
     namespace: app-1
