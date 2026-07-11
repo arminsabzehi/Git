@@ -70,9 +70,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+    # حذف تگ قبلی اگر وجود دارد
+          git tag -d ${{ needs.bump-version.outputs.new_tag }} 2>/dev/null || true
+          git push origin :refs/tags/${{ needs.bump-version.outputs.new_tag }} 2>/dev/null || true
+    # ایجاد و push تگ جدید
           git tag ${{ needs.bump-version.outputs.new_tag }}
           git push origin ${{ needs.bump-version.outputs.new_tag }}
-
       - name: Update deployment.yaml with new tag
         run: |
           sed -i "s|arminsabzehi/app-2:.*|arminsabzehi/app-2:${{ needs.bump-version.outputs.new_tag }}|g" apps/app-2/deployment.yaml
